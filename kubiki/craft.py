@@ -1,5 +1,11 @@
 from kubiki.client import Client
 
+class Chat:
+    def encode(self, msg):
+        pass
+    def decode(self, data):
+        pass
+
 class Craft:
     def __init__(self):
         self._client = Client()
@@ -7,8 +13,8 @@ class Craft:
         self.builder = None
 
     def chat(self):
-        self._client.send(b'\x00\x00')
-        pass
+        self._client.send(parser.Chat.encode('Hello'))
+
     def getPos(self):
         pass
 

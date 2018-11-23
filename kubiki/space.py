@@ -447,9 +447,9 @@ class Connection:
     def poll(self):
         readable, writable, exceptional = select.select([self.udp_socket], [], [], 0.01)
         if readable:
-            conn, addr = self.udp_socket.recvfrom(1024)
-            self.handle(conn, addr)
-
+            data, addr = self.udp_socket.recvfrom(1024)
+            reply = self.handle(data, addr)
+            self.udp_socket.sendto(reply, addr)
 
     def handle(self, data, addr):
         command = data[0]
@@ -459,7 +459,7 @@ class Connection:
         elif command == 1:
             cmd, x, y, z = struct.unpack('HIII', data)
             self.model.add_block((x, y, z), self.window.block)
-            self.udp_socket.sendto(cmd, addr)
+        return command
 
     def close(self):
         self.udp_socket.close()
