@@ -81,10 +81,16 @@ def tex_coords(top, bottom, side):
 
 TEXTURE_PATH = os.path.join(os.path.dirname(__file__), 'texture.png')
 
-GRASS = tex_coords((1, 0), (0, 1), (0, 0))
-SAND = tex_coords((1, 1), (1, 1), (1, 1))
-BRICK = tex_coords((2, 0), (2, 0), (2, 0))
-STONE = tex_coords((0, 2), (2, 1), (2, 1))
+class Block:
+    def __init__(self, num, tex_coords):
+        self.num = num
+        self.tex_coords = tex_coords
+
+
+GRASS = Block(blocks.GRASS, tex_coords((1, 0), (0, 1), (0, 0)))
+SAND = Block(blocks.SAND, tex_coords((1, 1), (1, 1), (1, 1)))
+BRICK = Block(blocks.BRICK, tex_coords((2, 0), (2, 0), (2, 0)))
+STONE = Block(blocks.STONE, tex_coords((0, 2), (2, 1), (2, 1)))
 
 FACES = [
     ( 0, 1, 0),
@@ -176,28 +182,8 @@ class Model(object):
                     # create outer walls.
                     for dy in xrange(-2, 3):
                         self.add_block((x, y + dy, z), STONE, immediate=True)
-        """
-        # generate the hills randomly
-        o = n - 10
-        for _ in xrange(120):
-            a = random.randint(-o, o)  # x position of the hill
-            b = random.randint(-o, o)  # z position of the hill
-            c = -1  # base of the hill
-            h = random.randint(1, 6)  # height of the hill
-            s = random.randint(4, 8)  # 2 * s is the side length of the hill
-            d = 1  # how quickly to taper off the hills
-            t = random.choice([GRASS, SAND, BRICK])
-            for y in xrange(c, c + h):
-                for x in xrange(a - s, a + s + 1):
-                    for z in xrange(b - s, b + s + 1):
-                        if (x - a) ** 2 + (z - b) ** 2 > (s + 1) ** 2:
-                            continue
-                        if (x - 0) ** 2 + (z - 0) ** 2 < 5 ** 2:
-                            continue
-                        self.add_block((x, y, z), t, immediate=False)
-                s -= d  # decrement side lenth so hills taper off
-        """
-    def hit_test(self, position, vector, max_distance=8):
+
+    def hit_test(self, position, vector, max_distance=30):
         """ Line of sight search from current position. If a block is
         intersected it is returned, along with the block previously in the line
         of sight. If no block is found, return None, None.
@@ -307,7 +293,7 @@ class Model(object):
             Whether or not to show the block immediately.
 
         """
-        texture = self.world[position]
+        texture = self.world[position].tex_coords
         self.shown[position] = texture
         if immediate:
             self._show_block(position, texture)
@@ -436,7 +422,7 @@ class Model(object):
             self._dequeue()
 
 
-class RmoteCommand:
+class RemoteCommand:
     def __init__(self, window, model):
         self.window = window
         self.model = model
@@ -458,11 +444,10 @@ class RmoteCommand:
 
     def getBlock(self, payload):
         pos = struct.unpack('iii', payload)
-        block = 0
         try:
-            texture = self.model.world[pos]
+            block = self.model.world[pos].num
         except KeyError:
-            block = 0
+            block = blocks.AIR
         return struct.pack('i', block)
 
     def setBlock(self, payload):
@@ -495,7 +480,7 @@ class Connection:
         addr = (host, port)
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_socket.bind(addr)
-        self.command = RmoteCommand(window, model)
+        self.command = RemoteCommand(window, model)
 
 
     def poll(self):

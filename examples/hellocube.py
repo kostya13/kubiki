@@ -4,11 +4,11 @@ from kubiki import blocks
 #show()
 craft = Craft()
 
-# craft.getBlock(0, 0, 0)
 craft.setPos(0, 0, 10)
 craft.setBlock(0, 0, 0, blocks.GRASS)
-# craft.chat('Привет')
-# craft.getPos()
+print(craft.getBlock(0, 0, 0))
+craft.chat('Привет')
+print(craft.getPos())
 
 #craft.lookAt(0, 0, 0)
 
