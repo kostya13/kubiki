@@ -14,7 +14,7 @@ from pyglet.gl import *
 from pyglet.graphics import TextureGroup
 from pyglet.window import key, mouse
 import kubiki.commands as codes
-from kubiki import blocks
+from kubiki.server import Server
 
 TICKS_PER_SEC = 160
 
@@ -87,10 +87,10 @@ class Block:
         self.tex_coords = tex_coords
 
 
-GRASS = Block(blocks.GRASS, tex_coords((1, 0), (0, 1), (0, 0)))
-SAND = Block(blocks.SAND, tex_coords((1, 1), (1, 1), (1, 1)))
-BRICK = Block(blocks.BRICK, tex_coords((2, 0), (2, 0), (2, 0)))
-STONE = Block(blocks.STONE, tex_coords((0, 2), (2, 1), (2, 1)))
+GRASS = Block(1, tex_coords((1, 0), (0, 1), (0, 0)))
+SAND = Block(2, tex_coords((1, 1), (1, 1), (1, 1)))
+BRICK = Block(3, tex_coords((2, 0), (2, 0), (2, 0)))
+STONE = Block(4, tex_coords((0, 2), (2, 1), (2, 1)))
 
 FACES = [
     ( 0, 1, 0),
@@ -422,76 +422,7 @@ class Model(object):
             self._dequeue()
 
 
-class RemoteCommand:
-    def __init__(self, window, model):
-        self.window = window
-        self.model = model
-        self.cmd_map = {codes.GET_BLOCK:self.getBlock,
-                        codes.SET_BLOCK: self.setBlock,
-                        codes.CHAT: self.chat,
-                        codes.GET_POS: self.getPos,
-                        codes.SET_POS: self.setPos,
-                        codes.LOOK_AT: self.lookAt}
-        self.block_map = {blocks.GRASS: GRASS,
-                          blocks.BRICK: BRICK,
-                          blocks.SAND: SAND,
-                          blocks.STONE: STONE}
 
-
-    def run(self, data):
-        code = data[0]
-        return struct.pack('B', code) + self.cmd_map[code](data[1:])
-
-    def getBlock(self, payload):
-        pos = struct.unpack('iii', payload)
-        try:
-            block = self.model.world[pos].num
-        except KeyError:
-            block = blocks.AIR
-        return struct.pack('i', block)
-
-    def setBlock(self, payload):
-        x, y, z, block = struct.unpack('iiii', payload)
-        self.model.add_block((x, y, z), self.block_map[block])
-        return b''
-
-    def chat(self, payload):
-        self.window.chat_msg = payload.decode()
-        return b''
-
-    def getPos(self, _):
-        return struct.pack('iii', *[int(i) for i in self.window.position])
-
-    def setPos(self, payload):
-        new_pos =  struct.unpack('iii', payload)
-        self.window.position = new_pos
-        return b''
-
-    def lookAt(self, payload):
-        pos = struct.unpack('iii', payload)
-        self.window.rotation = (45, 45)
-        return b''
-
-
-class Connection:
-    def __init__(self, window, model):
-        host = 'localhost'
-        port = 7777
-        addr = (host, port)
-        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udp_socket.bind(addr)
-        self.command = RemoteCommand(window, model)
-
-
-    def poll(self):
-        readable, writable, exceptional = select.select([self.udp_socket], [], [], 0.01)
-        if readable:
-            data, addr = self.udp_socket.recvfrom(1024)
-            reply = self.command.run(data)
-            self.udp_socket.sendto(reply, addr)
-
-    def close(self):
-        self.udp_socket.close()
 
 
 class Window(pyglet.window.Window):
@@ -548,7 +479,8 @@ class Window(pyglet.window.Window):
         # Instance of the model that handles the world.
         self.model = Model()
 
-        self.conn = Connection(self, self.model)
+        self.server = Server(self, self.model)
+        
         # The label that is displayed in the top left of the canvas.
         self.label = pyglet.text.Label('', font_name='Arial', font_size=18,
             x=10, y=self.height - 10, anchor_x='left', anchor_y='top',
@@ -633,7 +565,7 @@ class Window(pyglet.window.Window):
             The change in time since the last call.
 
         """
-        self.conn.poll()
+        self.server.handle()
 
         self.model.process_queue()
         sector = sectorize(self.position)
@@ -942,4 +874,3 @@ def run():
     window.set_exclusive_mouse(False)
     setup()
     pyglet.app.run()
-    window.conn.close()

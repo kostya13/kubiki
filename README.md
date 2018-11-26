@@ -18,6 +18,10 @@ cd Minecraft
 python main.py
 ```
 
+```
+sudo apt-get install freeglut3-dev
+```
+
 ## Как играть
 
 ### Moving

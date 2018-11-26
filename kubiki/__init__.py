@@ -27,6 +27,6 @@ def find_windows():
 
 
 def show():
-    if 'Kubiki' not in find_windows():
+    if 'Kubiki' not in []: #find_windows():
         subprocess.Popen("python -m kubiki", shell=True, stdout=None)
         time.sleep(1)
