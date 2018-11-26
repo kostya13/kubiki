@@ -1,0 +1,5 @@
+AIR = 0
+GRASS = 1
+SAND = 2
+BRICK = 3
+STONE = 4

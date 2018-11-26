@@ -13,8 +13,10 @@ from pyglet import image
 from pyglet.gl import *
 from pyglet.graphics import TextureGroup
 from pyglet.window import key, mouse
+import kubiki.commands as codes
+from kubiki import blocks
 
-TICKS_PER_SEC = 60
+TICKS_PER_SEC = 160
 
 # Size of sectors used to ease block loading.
 SECTOR_SIZE = 16
@@ -81,7 +83,6 @@ TEXTURE_PATH = os.path.join(os.path.dirname(__file__), 'texture.png')
 
 GRASS = tex_coords((1, 0), (0, 1), (0, 0))
 SAND = tex_coords((1, 1), (1, 1), (1, 1))
-BRICK = tex_coords((2, 0), (2, 0), (2, 0))
 BRICK = tex_coords((2, 0), (2, 0), (2, 0))
 STONE = tex_coords((0, 2), (2, 1), (2, 1))
 
@@ -157,7 +158,7 @@ class Model(object):
         # _show_block() and _hide_block() calls
         self.queue = deque()
 
-        self._initialize()
+        #self._initialize()
 
     def _initialize(self):
         """ Initialize the world by placing all the blocks.
@@ -434,6 +435,59 @@ class Model(object):
         while self.queue:
             self._dequeue()
 
+
+class RmoteCommand:
+    def __init__(self, window, model):
+        self.window = window
+        self.model = model
+        self.cmd_map = {codes.GET_BLOCK:self.getBlock,
+                        codes.SET_BLOCK: self.setBlock,
+                        codes.CHAT: self.chat,
+                        codes.GET_POS: self.getPos,
+                        codes.SET_POS: self.setPos,
+                        codes.LOOK_AT: self.lookAt}
+        self.block_map = {blocks.GRASS: GRASS,
+                          blocks.BRICK: BRICK,
+                          blocks.SAND: SAND,
+                          blocks.STONE: STONE}
+
+
+    def run(self, data):
+        code = data[0]
+        return struct.pack('B', code) + self.cmd_map[code](data[1:])
+
+    def getBlock(self, payload):
+        pos = struct.unpack('iii', payload)
+        block = 0
+        try:
+            texture = self.model.world[pos]
+        except KeyError:
+            block = 0
+        return struct.pack('i', block)
+
+    def setBlock(self, payload):
+        x, y, z, block = struct.unpack('iiii', payload)
+        self.model.add_block((x, y, z), self.block_map[block])
+        return b''
+
+    def chat(self, payload):
+        self.window.chat_msg = payload.decode()
+        return b''
+
+    def getPos(self, _):
+        return struct.pack('iii', *[int(i) for i in self.window.position])
+
+    def setPos(self, payload):
+        new_pos =  struct.unpack('iii', payload)
+        self.window.position = new_pos
+        return b''
+
+    def lookAt(self, payload):
+        pos = struct.unpack('iii', payload)
+        self.window.rotation = (45, 45)
+        return b''
+
+
 class Connection:
     def __init__(self, window, model):
         host = 'localhost'
@@ -441,25 +495,15 @@ class Connection:
         addr = (host, port)
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_socket.bind(addr)
-        self.window = window
-        self.model = model
+        self.command = RmoteCommand(window, model)
+
 
     def poll(self):
         readable, writable, exceptional = select.select([self.udp_socket], [], [], 0.01)
         if readable:
             data, addr = self.udp_socket.recvfrom(1024)
-            reply = self.handle(data, addr)
+            reply = self.command.run(data)
             self.udp_socket.sendto(reply, addr)
-
-    def handle(self, data, addr):
-        command = data[0]
-        if command == 0:
-            self.window.chat_msg = 'Hello'
-            self.udp_socket.sendto(data, addr)
-        elif command == 1:
-            cmd, x, y, z = struct.unpack('HIII', data)
-            self.model.add_block((x, y, z), self.window.block)
-        return command
 
     def close(self):
         self.udp_socket.close()
@@ -875,7 +919,7 @@ class Window(pyglet.window.Window):
 
         """
         x, y, z = map(lambda i: int(i), self.position)
-        self.label.text = f'{int(pyglet.clock.get_fps())} ({x}, {y}, {z}), {len(self.model.world)}\n{self.chat_msg}'
+        self.label.text = f'[x={x}, y={y}, z={z}] кубиков: {len(self.model.world)}\n{self.chat_msg}'
         self.label.draw()
 
     def draw_reticle(self):
