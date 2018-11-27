@@ -1,7 +1,7 @@
 import time
 import ctypes
 import subprocess
-from kubiki.craft import Craft
+
 
 def find_windows():
 

@@ -13,8 +13,8 @@ from pyglet import image
 from pyglet.gl import *
 from pyglet.graphics import TextureGroup
 from pyglet.window import key, mouse
-import kubiki.commands as codes
 from kubiki.server import Server
+from kubiki.blocks import *
 
 TICKS_PER_SEC = 160
 
@@ -55,42 +55,14 @@ def cube_vertices(x, y, z, n):
     ]
 
 
-def tex_coord(x, y, n=4):
-    """ Return the bounding vertices of the texture square.
-
-    """
-    m = 1.0 / n
-    dx = x * m
-    dy = y * m
-    return dx, dy, dx + m, dy, dx + m, dy + m, dx, dy + m
-
-
-def tex_coords(top, bottom, side):
-    """ Return a list of the texture squares for the top, bottom and side.
-
-    """
-    top = tex_coord(*top)
-    bottom = tex_coord(*bottom)
-    side = tex_coord(*side)
-    result = []
-    result.extend(top)
-    result.extend(bottom)
-    result.extend(side * 4)
-    return result
 
 
 TEXTURE_PATH = os.path.join(os.path.dirname(__file__), 'texture.png')
 
-class Block:
-    def __init__(self, num, tex_coords):
-        self.num = num
-        self.tex_coords = tex_coords
 
 
-GRASS = Block(1, tex_coords((1, 0), (0, 1), (0, 0)))
-SAND = Block(2, tex_coords((1, 1), (1, 1), (1, 1)))
-BRICK = Block(3, tex_coords((2, 0), (2, 0), (2, 0)))
-STONE = Block(4, tex_coords((0, 2), (2, 1), (2, 1)))
+
+
 
 FACES = [
     ( 0, 1, 0),
@@ -165,6 +137,7 @@ class Model(object):
         self.queue = deque()
 
         #self._initialize()
+        self.add_block((0, 0, 0), STONE, immediate=True)
 
     def _initialize(self):
         """ Initialize the world by placing all the blocks.
@@ -429,7 +402,7 @@ class Window(pyglet.window.Window):
 
     def __init__(self, *args, **kwargs):
         super(Window, self).__init__(*args, **kwargs)
-        self.chat_msg = ''
+
         # Whether or not the window exclusively captures the mouse.
         self.exclusive = False
 
@@ -446,7 +419,7 @@ class Window(pyglet.window.Window):
 
         # Current (x, y, z) position in the world, specified with floats. Note
         # that, perhaps unlike in math class, the y-axis is the vertical axis.
-        self.position = (0, 0, 0)
+        self.position = (10, 10, 10)
 
         # First element is rotation of the player in the x-z plane (ground
         # plane) measured from the z-axis down. The second is the rotation
@@ -454,7 +427,7 @@ class Window(pyglet.window.Window):
         #
         # The vertical plane rotation ranges from -90 (looking straight down) to
         # 90 (looking straight up). The horizontal rotation range is unbounded.
-        self.rotation = (0, 0)
+        self.rotation = (-45, -45)
 
         # Which sector the player is currently in.
         self.sector = None
@@ -482,10 +455,15 @@ class Window(pyglet.window.Window):
         self.server = Server(self, self.model)
         
         # The label that is displayed in the top left of the canvas.
-        self.label = pyglet.text.Label('', font_name='Arial', font_size=18,
+        self.label = pyglet.text.Label('', font_name='Arial', font_size=14,
+            x=10, y=self.height, anchor_x='left', anchor_y='top',
+            color=(0, 0, 0, 255))
+
+        self.chat_label = pyglet.text.Label('', font_name='Arial', font_size=18,
             x=10, y=self.height - 10, anchor_x='left', anchor_y='top',
             color=(0, 0, 0, 255))
 
+        self.chat_msg = ''
         # This call schedules the `update()` method to be called
         # TICKS_PER_SEC. This is the main game event loop.
         pyglet.clock.schedule_interval(self.update, 1.0 / TICKS_PER_SEC)
@@ -565,7 +543,7 @@ class Window(pyglet.window.Window):
             The change in time since the last call.
 
         """
-        self.server.handle()
+        self.server.accept()
 
         self.model.process_queue()
         sector = sectorize(self.position)
@@ -763,6 +741,7 @@ class Window(pyglet.window.Window):
         """
         # label
         self.label.y = height - 10
+        self.chat_label.y = height - 35
         # reticle
         if self.reticle:
             self.reticle.delete()
@@ -836,8 +815,11 @@ class Window(pyglet.window.Window):
 
         """
         x, y, z = map(lambda i: int(i), self.position)
-        self.label.text = f'[x={x}, y={y}, z={z}] кубиков: {len(self.model.world)}\n{self.chat_msg}'
+        self.label.text = f'[x={x}, y={y}, z={z}] кубиков: {len(self.model.world)}'
+        self.chat_label.text = f'{self.chat_msg}'
         self.label.draw()
+        self.chat_label.draw()
+
 
     def draw_reticle(self):
         """ Draw the crosshairs in the center of the screen.
