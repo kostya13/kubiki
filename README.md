@@ -21,7 +21,7 @@ python main.py
 ```
 sudo apt-get install freeglut3-dev
 ```
-
+https://github.com/sprintingkiwi/pycraft_mod
 ## Как играть
 
 ### Moving

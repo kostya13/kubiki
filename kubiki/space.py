@@ -18,8 +18,6 @@ from kubiki.blocks import *
 
 TICKS_PER_SEC = 160
 
-# Size of sectors used to ease block loading.
-SECTOR_SIZE = 16
 
 WALKING_SPEED = 5
 FLYING_SPEED = 15
@@ -90,23 +88,6 @@ def normalize(position):
     x, y, z = position
     x, y, z = (int(round(x)), int(round(y)), int(round(z)))
     return (x, y, z)
-
-
-def sectorize(position):
-    """ Returns a tuple representing the sector for the given `position`.
-
-    Parameters
-    ----------
-    position : tuple of len 3
-
-    Returns
-    -------
-    sector : tuple of len 3
-
-    """
-    x, y, z = normalize(position)
-    x, y, z = x // SECTOR_SIZE, y // SECTOR_SIZE, z // SECTOR_SIZE
-    return (x, 0, z)
 
 
 class Model(object):
@@ -211,7 +192,6 @@ class Model(object):
         if position in self.world:
             self.remove_block(position, immediate)
         self.world[position] = texture
-        self.sectors.setdefault(sectorize(position), []).append(position)
         if immediate:
             if self.exposed(position):
                 self.show_block(position)
@@ -229,7 +209,6 @@ class Model(object):
 
         """
         del self.world[position]
-        self.sectors[sectorize(position)].remove(position)
         if immediate:
             if position in self.shown:
                 self.hide_block(position)
@@ -317,51 +296,6 @@ class Model(object):
 
         """
         self._shown.pop(position).delete()
-
-    def show_sector(self, sector):
-        """ Ensure all blocks in the given sector that should be shown are
-        drawn to the canvas.
-
-        """
-        for position in self.sectors.get(sector, []):
-            if position not in self.shown and self.exposed(position):
-                self.show_block(position, False)
-
-    def hide_sector(self, sector):
-        """ Ensure all blocks in the given sector that should be hidden are
-        removed from the canvas.
-
-        """
-        for position in self.sectors.get(sector, []):
-            if position in self.shown:
-                self.hide_block(position, False)
-
-    def change_sectors(self, before, after):
-        """ Move from sector `before` to sector `after`. A sector is a
-        contiguous x, y sub-region of world. Sectors are used to speed up
-        world rendering.
-
-        """
-        before_set = set()
-        after_set = set()
-        pad = 4
-        for dx in xrange(-pad, pad + 1):
-            for dy in [0]:  # xrange(-pad, pad + 1):
-                for dz in xrange(-pad, pad + 1):
-                    if dx ** 2 + dy ** 2 + dz ** 2 > (pad + 1) ** 2:
-                        continue
-                    if before:
-                        x, y, z = before
-                        before_set.add((x + dx, y + dy, z + dz))
-                    if after:
-                        x, y, z = after
-                        after_set.add((x + dx, y + dy, z + dz))
-        show = after_set - before_set
-        hide = before_set - after_set
-        for sector in show:
-            self.show_sector(sector)
-        for sector in hide:
-            self.hide_sector(sector)
 
     def _enqueue(self, func, *args):
         """ Add `func` to the internal queue.
@@ -546,12 +480,6 @@ class Window(pyglet.window.Window):
         self.server.accept()
 
         self.model.process_queue()
-        sector = sectorize(self.position)
-        if sector != self.sector:
-            self.model.change_sectors(self.sector, sector)
-            if self.sector is None:
-                self.model.process_entire_queue()
-            self.sector = sector
         m = 8
         dt = min(dt, 0.2)
         for _ in xrange(m):
@@ -773,7 +701,7 @@ class Window(pyglet.window.Window):
         glViewport(0, 0, width, height)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        gluPerspective(65.0, width / float(height), 0.1, 500.0)
+        gluPerspective(100.0, width / float(height), 0.1, 500.0)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         x, y = self.rotation
@@ -784,7 +712,6 @@ class Window(pyglet.window.Window):
 
     def on_draw(self):
         """ Called by pyglet to draw the canvas.
-
         """
         self.clear()
         self.set_3d()

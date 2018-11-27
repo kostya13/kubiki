@@ -14,6 +14,7 @@ class RemoteCommand:
                         b"player.setPos": self.setPos}
         self.blocks = [blocks.GRASS, blocks.BRICK, blocks.SAND, blocks.STONE]
 
+
     def _find_block(self, num):
         for b in self.blocks:
             if num == b.num:
@@ -21,13 +22,12 @@ class RemoteCommand:
         return blocks.GRASS
 
     def run(self, data):
-
         start = data.find(b'(')
         if start > 0:
             cmd = data[:start]
             end = data.find(b')')
             payload = data[start +1 : end]
-            print(data, cmd, payload)
+            #print(data, cmd, payload)
             fun = self.cmd_map.get(cmd)
             if fun:
                 return fun(payload)
@@ -52,7 +52,7 @@ class RemoteCommand:
         self.window.chat_msg = payload.decode()
 
     def getPos(self, _):
-        return struct.pack('iii', *[int(i) for i in self.window.position])
+        return ','.join([str(i) for i in self.window.position])
 
     def setPos(self, payload):
         new_pos =  struct.unpack('iii', payload)
@@ -68,7 +68,6 @@ class Server:
         self.sock.bind((HOST, PORT))
         self.sock.listen(1)
         self.connection = None
-
         #self.server.handle_timeout = lambda _: pass
 
     def _close(self):
@@ -77,20 +76,21 @@ class Server:
 
     def accept(self):
         if self.connection:
-            self._handle()
+             self._handle()
         else:
             if select.select([self.sock], [], [],0)[0]:
                 self.connection, _ = self.sock.accept()
                 self._handle()
 
     def _handle(self):
-        data = self.connection.recv(1024)
-        print('received {!r}'.format(data))
-        if data:
-            print('sending data back to the client')
-            for c in data.split(b'\n'):
-                reply = self.command.run(c)
+        #data = self.connection.recv(1024)
+        for line in self.connection.makefile("b"):
+            #print('received {!r}'.format(line))
+            reply = self.command.run(line)
             if reply:
-                self.connection.send(reply)
-        else:
-            self._close()
+                self.connection.send(reply.encode() + b"\n")
+        self._close()
+             # #stripped = s.rstrip("\n")
+            # if s:
+
+#
