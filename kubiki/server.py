@@ -7,11 +7,13 @@ class RemoteCommand:
     def __init__(self, window, model):
         self.window = window
         self.model = model
-        self.cmd_map = {b"world.getBlock":self.getBlock,
-                        b"world.setBlock": self.setBlock,
-                        b"chat.post": self.chat,
-                        b"player.getPos": self.getPos,
-                        b"player.setPos": self.setPos}
+        self.cmd_map = {b"world.getBlock":self.world_getBlock,
+                        b"world.setBlock": self.world_setBlock,
+                        b"world.setBlocks": self.world_setBlocks,
+                        b"chat.post": self.chat_post,
+                        b"player.getPos": self.player_getPos,
+                        b"player.setPos": self.player_setPos,
+                        b"player.getTile": self.player_getTile}
         self.blocks = [blocks.GRASS, blocks.BRICK, blocks.SAND, blocks.STONE]
 
 
@@ -35,7 +37,7 @@ class RemoteCommand:
                 print(f'Unknown command: {cmd}')
         return None
 
-    def getBlock(self, payload):
+    def world_getBlock(self, payload):
         pos = struct.unpack('iii', payload)
         try:
             block = self.model.world[pos].num
@@ -43,22 +45,33 @@ class RemoteCommand:
             block = blocks.AIR
         return struct.pack('i', block)
 
-    def setBlock(self, payload):
+    def world_setBlock(self, payload):
         args = [int(i) for i in payload.split(b',')]
         self.model.add_block((args[0], args[1], args[2]), self._find_block(args[3]))
 
+    def world_setBlocks(self, payload):
+        args = [int(i) for i in payload.split(b',')]
+        begin = args[0:3]
+        end = args[3:6]
+        block = self._find_block(args[7])
+        for x in range(begin[0], end[0] + 1):
+            for y in range(begin[1], end[1] + 1):
+                for z in range(begin[2], end[2] + 1):
+                    self.model.add_block((x, y, z), block)
 
-    def chat(self, payload):
+    def chat_post(self, payload):
         self.window.chat_msg = payload.decode()
 
-    def getPos(self, _):
+    def player_getPos(self, _):
         return ','.join([str(i) for i in self.window.position])
 
-    def setPos(self, payload):
+    def player_setPos(self, payload):
         new_pos =  struct.unpack('iii', payload)
         self.window.position = new_pos
         return b''
 
+    def player_getTile(self, _):
+        return ','.join([str(int(i)) for i in self.window.position])
 
 class Server:
     def __init__(self, window, model):
@@ -68,29 +81,35 @@ class Server:
         self.sock.bind((HOST, PORT))
         self.sock.listen(1)
         self.connection = None
+        self.file = None
+        self.batch = 1
         #self.server.handle_timeout = lambda _: pass
 
     def _close(self):
         self.connection.close()
         self.connection = None
+        self.file = None
+
+    def _send(self, reply):
+        if self.connection:
+            self.connection.send(reply.encode() + b"\n")
 
     def accept(self):
-        if self.connection:
-             self._handle()
+        if self.connection and self.file:
+            self._handle()
         else:
             if select.select([self.sock], [], [],0)[0]:
                 self.connection, _ = self.sock.accept()
+                self.file = self.connection.makefile("b")
                 self._handle()
-
     def _handle(self):
-        #data = self.connection.recv(1024)
-        for line in self.connection.makefile("b"):
-            #print('received {!r}'.format(line))
-            reply = self.command.run(line)
-            if reply:
-                self.connection.send(reply.encode() + b"\n")
-        self._close()
-             # #stripped = s.rstrip("\n")
-            # if s:
+        for _ in range(self.batch):
+            data = self.file.readline()
+            if data:
+                reply = self.command.run(data)
+                if reply:
+                    self._send(reply)
+            else:
+                self._close()
+                break
 
-#

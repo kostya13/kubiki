@@ -16,11 +16,11 @@ from pyglet.window import key, mouse
 from kubiki.server import Server
 from kubiki.blocks import *
 
-TICKS_PER_SEC = 160
+TICKS_PER_SEC = 100
 
 
-WALKING_SPEED = 5
-FLYING_SPEED = 15
+WALKING_SPEED = 10
+FLYING_SPEED = 30
 
 GRAVITY = 20.0
 MAX_JUMP_HEIGHT = 1.0 # About the height of a block.
@@ -118,7 +118,7 @@ class Model(object):
         self.queue = deque()
 
         #self._initialize()
-        self.add_block((0, 0, 0), STONE, immediate=True)
+        self.add_block((0, 0, 0), STONE)
 
     def _initialize(self):
         """ Initialize the world by placing all the blocks.
@@ -175,7 +175,7 @@ class Model(object):
                 return True
         return False
 
-    def add_block(self, position, texture, immediate=True):
+    def add_block(self, position, texture):
         """ Add a block with the given `texture` and `position` to the world.
 
         Parameters
@@ -190,14 +190,13 @@ class Model(object):
 
         """
         if position in self.world:
-            self.remove_block(position, immediate)
+            self.remove_block(position)
         self.world[position] = texture
-        if immediate:
-            if self.exposed(position):
-                self.show_block(position)
-            self.check_neighbors(position)
+        if self.exposed(position):
+            self.show_block(position)
+        self.check_neighbors(position)
 
-    def remove_block(self, position, immediate=True):
+    def remove_block(self, position):
         """ Remove the block at the given `position`.
 
         Parameters
@@ -209,10 +208,9 @@ class Model(object):
 
         """
         del self.world[position]
-        if immediate:
-            if position in self.shown:
-                self.hide_block(position)
-            self.check_neighbors(position)
+        if position in self.shown:
+            self.hide_block(position)
+        self.check_neighbors(position)
 
     def check_neighbors(self, position):
         """ Check all blocks surrounding `position` and ensure their visual
@@ -233,7 +231,7 @@ class Model(object):
                 if key in self.shown:
                     self.hide_block(key)
 
-    def show_block(self, position, immediate=True):
+    def show_block(self, position):
         """ Show the block at the given `position`. This method assumes the
         block has already been added with add_block()
 
@@ -247,10 +245,7 @@ class Model(object):
         """
         texture = self.world[position].tex_coords
         self.shown[position] = texture
-        if immediate:
-            self._show_block(position, texture)
-        else:
-            self._enqueue(self._show_block, position, texture)
+        self._show_block(position, texture)
 
     def _show_block(self, position, texture):
         """ Private implementation of the `show_block()` method.
@@ -286,50 +281,13 @@ class Model(object):
 
         """
         self.shown.pop(position)
-        if immediate:
-            self._hide_block(position)
-        else:
-            self._enqueue(self._hide_block, position)
+        self._hide_block(position)
 
     def _hide_block(self, position):
         """ Private implementation of the 'hide_block()` method.
 
         """
         self._shown.pop(position).delete()
-
-    def _enqueue(self, func, *args):
-        """ Add `func` to the internal queue.
-
-        """
-        self.queue.append((func, args))
-
-    def _dequeue(self):
-        """ Pop the top function from the internal queue and call it.
-
-        """
-        func, args = self.queue.popleft()
-        func(*args)
-
-    def process_queue(self):
-        """ Process the entire queue while taking periodic breaks. This allows
-        the game loop to run smoothly. The queue contains calls to
-        _show_block() and _hide_block() so this method should be called if
-        add_block() or remove_block() was called with immediate=False
-
-        """
-        start = time.clock()
-        while self.queue and time.clock() - start < 1.0 / TICKS_PER_SEC:
-            self._dequeue()
-
-    def process_entire_queue(self):
-        """ Process the entire queue with no breaks.
-
-        """
-        while self.queue:
-            self._dequeue()
-
-
-
 
 
 class Window(pyglet.window.Window):
@@ -477,12 +435,14 @@ class Window(pyglet.window.Window):
             The change in time since the last call.
 
         """
+        
         self.server.accept()
 
-        self.model.process_queue()
         m = 8
+        # self._update(dt)
+        # print(dt)
         dt = min(dt, 0.2)
-        for _ in xrange(m):
+        for _ in range(m):
             self._update(dt / m)
 
     def _update(self, dt):

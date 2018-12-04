@@ -106,7 +106,7 @@ def tower(x, y, z, width, baseHeight, altHeight, innerHeight, distribution):
     rectangularPrism(x + 2, y + innerHeight - 1, z + 2, x + width - 3, y + innerHeight - 1, z + width - 3, distribution)
 
 
-mc = Minecraft()
+mc = minecraft.Minecraft.create()
 pos = mc.player.getTilePos()
 
 distribution = ((.05, MOSS_STONE), (.1, Block(STONE_BRICK.id, 1)), (.2, Block(STONE_BRICK.id, 2)),
