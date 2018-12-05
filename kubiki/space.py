@@ -39,6 +39,7 @@ PLAYER_HEIGHT = 2
 if sys.version_info[0] >= 3:
     xrange = range
 
+
 def cube_vertices(x, y, z, n):
     """ Return the vertices of the cube at position x, y, z with size 2*n.
 
@@ -109,13 +110,6 @@ class Model(object):
 
         # Mapping from position to a pyglet `VertextList` for all shown blocks.
         self._shown = {}
-
-        # Mapping from sector to a list of positions inside that sector.
-        self.sectors = {}
-
-        # Simple function queue implementation. The queue is populated with
-        # _show_block() and _hide_block() calls
-        self.queue = deque()
 
         #self._initialize()
         self.add_block((0, 0, 0), STONE)
@@ -207,7 +201,11 @@ class Model(object):
             Whether or not to immediately remove block from canvas.
 
         """
-        del self.world[position]
+        try:
+            del self.world[position]
+        except KeyError:
+            print("position not found:", position)
+            pass
         if position in self.shown:
             self.hide_block(position)
         self.check_neighbors(position)
@@ -261,12 +259,11 @@ class Model(object):
         """
         x, y, z = position
         vertex_data = cube_vertices(x, y, z, 0.5)
-        texture_data = list(texture)
         # create vertex list
         # FIXME Maybe `add_indexed()` should be used instead
         self._shown[position] = self.batch.add(24, GL_QUADS, self.group,
             ('v3f/static', vertex_data),
-            ('t2f/static', texture_data))
+            ('t2f/static', texture))
 
     def hide_block(self, position, immediate=True):
         """ Hide the block at the given `position`. Hiding does not remove the
@@ -598,6 +595,11 @@ class Window(pyglet.window.Window):
             self.set_exclusive_mouse(False)
         elif symbol == key.TAB:
             self.flying = not self.flying
+        elif symbol == key.ENTER:
+            self.model.world = {}
+            self.model.shown = {}
+            self.model._shown = {}
+            self.model.batch = pyglet.graphics.Batch()
         elif symbol in self.num_keys:
             index = (symbol - self.num_keys[0]) % len(self.inventory)
             self.block = self.inventory[index]

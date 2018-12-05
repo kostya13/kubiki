@@ -154,10 +154,14 @@ class Server:
 
     def _handle(self):
         if select.select([self.connection], [], [], 0)[0]:
-            data = self.connection.recv(16384)
-            if data:
-                self.commands.extend([l for l in data.split(b'\n')])
-            else:
+            try:
+                data = self.connection.recv(16384)
+                if data:
+                    self.commands.extend([l for l in data.split(b'\n')])
+                else:
+                    self._close()
+            except ConnectionError:
+                print('Connection error')
                 self._close()
 
     def _apply(self):
