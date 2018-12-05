@@ -26,6 +26,7 @@ class Block:
         self.num = num
         self.tex_coords = tex_coords
 
+AIR = Block(0, tex_coords((1, 0), (0, 1), (0, 0)))
 GRASS = Block(2, tex_coords((1, 0), (0, 1), (0, 0)))
 SAND = Block(12, tex_coords((1, 1), (1, 1), (1, 1)))
 BRICK = Block(45, tex_coords((2, 0), (2, 0), (2, 0)))
