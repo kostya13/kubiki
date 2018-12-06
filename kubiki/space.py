@@ -18,7 +18,6 @@ from kubiki.blocks import *
 
 TICKS_PER_SEC = 100
 
-
 WALKING_SPEED = 10
 FLYING_SPEED = 30
 
@@ -105,9 +104,6 @@ class Model(object):
         # This defines all the blocks that are currently in the world.
         self.world = {}
 
-        # Same mapping as `world` but only contains blocks that are shown.
-        self.shown = {}
-
         # Mapping from position to a pyglet `VertextList` for all shown blocks.
         self._shown = {}
 
@@ -118,19 +114,8 @@ class Model(object):
         """ Initialize the world by placing all the blocks.
 
         """
-        n = 8  # 1/2 width and height of world
-        s = 1  # step size
-        y = 0  # initial y height
-        for x in xrange(-n, n + 1, s):
-            for z in xrange(-n, n + 1, s):
-                # create a layer stone an grass everywhere.
-                #self.add_block((x, y - 2, z), GRASS, immediate=False)
-                self.add_block((x, y - 3, z), STONE, immediate=True)
-                if x in (-n, n) or z in (-n, n):
-                    # create outer walls.
-                    for dy in xrange(-2, 3):
-                        self.add_block((x, y + dy, z), STONE, immediate=True)
-
+        pass
+    
     def hit_test(self, position, vector, max_distance=30):
         """ Line of sight search from current position. If a block is
         intersected it is returned, along with the block previously in the line
@@ -158,94 +143,23 @@ class Model(object):
             x, y, z = x + dx / m, y + dy / m, z + dz / m
         return None, None
 
-    def exposed(self, position):
-        """ Returns False is given `position` is surrounded on all 6 sides by
-        blocks, True otherwise.
 
-        """
-        x, y, z = position
-        for dx, dy, dz in FACES:
-            if (x + dx, y + dy, z + dz) not in self.world:
-                return True
-        return False
-
-    def add_block(self, position, texture):
-        """ Add a block with the given `texture` and `position` to the world.
+    def add_block(self, position, block):
+        """ Add a block with the given `block` and `position` to the world.
 
         Parameters
         ----------
         position : tuple of len 3
             The (x, y, z) position of the block to add.
-        texture : list of len 3
-            The coordinates of the texture squares. Use `tex_coords()` to
-            generate.
-        immediate : bool
-            Whether or not to draw the block immediately.
-
+        block : block object
         """
         if position in self.world:
             self.remove_block(position)
-        self.world[position] = texture
-        if self.exposed(position):
-            self.show_block(position)
-        self.check_neighbors(position)
+        self.world[position] = block
+        self._add_block(position, self.world[position].tex_coords)
+            
 
-    def remove_block(self, position):
-        """ Remove the block at the given `position`.
-
-        Parameters
-        ----------
-        position : tuple of len 3
-            The (x, y, z) position of the block to remove.
-        immediate : bool
-            Whether or not to immediately remove block from canvas.
-
-        """
-        try:
-            del self.world[position]
-        except KeyError:
-            print("position not found:", position)
-            pass
-        if position in self.shown:
-            self.hide_block(position)
-        self.check_neighbors(position)
-
-    def check_neighbors(self, position):
-        """ Check all blocks surrounding `position` and ensure their visual
-        state is current. This means hiding blocks that are not exposed and
-        ensuring that all exposed blocks are shown. Usually used after a block
-        is added or removed.
-
-        """
-        x, y, z = position
-        for dx, dy, dz in FACES:
-            key = (x + dx, y + dy, z + dz)
-            if key not in self.world:
-                continue
-            if self.exposed(key):
-                if key not in self.shown:
-                    self.show_block(key)
-            else:
-                if key in self.shown:
-                    self.hide_block(key)
-
-    def show_block(self, position):
-        """ Show the block at the given `position`. This method assumes the
-        block has already been added with add_block()
-
-        Parameters
-        ----------
-        position : tuple of len 3
-            The (x, y, z) position of the block to show.
-        immediate : bool
-            Whether or not to show the block immediately.
-
-        """
-        texture = self.world[position].tex_coords
-        self.shown[position] = texture
-        self._show_block(position, texture)
-
-    def _show_block(self, position, texture):
+    def _add_block(self, position, texture):
         """ Private implementation of the `show_block()` method.
 
         Parameters
@@ -265,26 +179,18 @@ class Model(object):
             ('v3f/static', vertex_data),
             ('t2f/static', texture))
 
-    def hide_block(self, position, immediate=True):
-        """ Hide the block at the given `position`. Hiding does not remove the
-        block from the world.
+    def remove_block(self, position):
+        """ Remove the block at the given `position`.
 
         Parameters
         ----------
         position : tuple of len 3
-            The (x, y, z) position of the block to hide.
-        immediate : bool
-            Whether or not to immediately remove the block from the canvas.
+            The (x, y, z) position of the block to remove.
 
         """
-        self.shown.pop(position)
-        self._hide_block(position)
-
-    def _hide_block(self, position):
-        """ Private implementation of the 'hide_block()` method.
-
-        """
-        self._shown.pop(position).delete()
+        if position in self.world:
+            del self.world[position]
+            self._shown.pop(position).delete()
 
 
 class Window(pyglet.window.Window):
@@ -318,9 +224,6 @@ class Window(pyglet.window.Window):
         # 90 (looking straight up). The horizontal rotation range is unbounded.
         self.rotation = (-45, -45)
 
-        # Which sector the player is currently in.
-        self.sector = None
-
         # The crosshairs at the center of the screen.
         self.reticle = None
 
@@ -353,6 +256,8 @@ class Window(pyglet.window.Window):
             color=(0, 0, 0, 255))
 
         self.chat_msg = ''
+
+        self.event = ()
         # This call schedules the `update()` method to be called
         # TICKS_PER_SEC. This is the main game event loop.
         pyglet.clock.schedule_interval(self.update, 1.0 / TICKS_PER_SEC)
@@ -432,7 +337,6 @@ class Window(pyglet.window.Window):
             The change in time since the last call.
 
         """
-        
         self.server.accept()
 
         m = 8
@@ -544,8 +448,10 @@ class Window(pyglet.window.Window):
                     self.model.add_block(previous, self.block)
             elif button == pyglet.window.mouse.LEFT and block:
                 texture = self.model.world[block]
+                self.event = block, self.model.world[block].num
                 if texture != STONE:
                     self.model.remove_block(block)
+                    
         else:
             self.set_exclusive_mouse(True)
 
@@ -597,9 +503,9 @@ class Window(pyglet.window.Window):
             self.flying = not self.flying
         elif symbol == key.ENTER:
             self.model.world = {}
-            self.model.shown = {}
-            self.model._shown = {}
-            self.model.batch = pyglet.graphics.Batch()
+            for s in self.model._shown.values():
+                s.delete()
+            self.model._shown = {}                
         elif symbol in self.num_keys:
             index = (symbol - self.num_keys[0]) % len(self.inventory)
             self.block = self.inventory[index]

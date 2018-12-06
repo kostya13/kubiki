@@ -3,6 +3,7 @@ import socket
 from kubiki import blocks
 from collections import deque
 import time
+from itertools import product
 
 class RemoteCommand:
     def __init__(self, window, model):
@@ -23,7 +24,9 @@ class RemoteCommand:
                         b"camera.mode.setNormal": self.camera_mode_setNormal,
                         b"camera.mode.setThirdPerson": self.camera_mode_setThirdPerson,
                         b"camera.mode.setFixed": self.camera_mode_setFixed,
-                        b"camera.mode.setPos": self.camera_mode_setPos}
+                        b"camera.mode.setPos": self.camera_mode_setPos,
+                        b"events.block.hits": self.events_block_hits,
+                        b"events.clear": self.events_clear}
         self.blocks = [blocks.GRASS, blocks.BRICK, blocks.SAND, blocks.STONE, blocks.AIR]
 
 
@@ -72,14 +75,15 @@ class RemoteCommand:
             self.model.add_block((args[0], args[1], args[2]), block)
 
     def world_setBlocks(self, payload):
+        print(payload)
         args = [int(i) for i in payload.split(b',')]
         begin = args[0:3]
         end = args[3:6]
         block = self._find_block(args[6])
         s = time.time()
-        for x in range(begin[0], end[0] + 1):
-            for y in range(begin[1], end[1] + 1):
-                for z in range(begin[2], end[2] + 1):
+        for x,y,z in product(range(begin[0], end[0] + 1), 
+                             range(begin[1], end[1] + 1),
+                             range(begin[2], end[2] + 1)):
                     if block == blocks.AIR:
                         self.model.remove_block((x, y, z))
                     else:
@@ -124,6 +128,19 @@ class RemoteCommand:
     def camera_mode_setPos(self, _):
         print("camera.mode.setPos", 'not implemented')
 
+    def events_block_hits(self, _):
+        if self.window.event:
+            event = self.window.event
+            block = event[1]
+            pos = ','.join([str(int(i)) for i in event[0]])
+            self.window.event = None
+            return f'{pos},0,{block}'
+        return '|'
+        
+    def events_clear(self, _):
+        print("events.clear", 'not implemented')
+
+
 class Server:
     def __init__(self, window, model):
         self.command = RemoteCommand(window, model)
@@ -155,7 +172,7 @@ class Server:
     def _handle(self):
         if select.select([self.connection], [], [], 0)[0]:
             try:
-                data = self.connection.recv(16384)
+                data = self.connection.recv(65536)
                 if data:
                     self.commands.extend([l for l in data.split(b'\n')])
                 else:

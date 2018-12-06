@@ -17,17 +17,20 @@ s = time.time()
 #             mc.setBlock(i,j,k,block.GRASS)
 mc.setBlocks(0,0,0,100,0,100,block.GRASS)
 
-mc.setBlocks(0,0,0,100,1,0,block.GRASS)
-mc.setBlocks(0,0,0,0,1,100,block.GRASS)
+#mc.setBlocks(0,0,0,100,1,0,block.GRASS)
+#mc.setBlocks(0,0,0,0,1,100,block.GRASS)
 
-mc.setBlocks(0,0,100,100,1,100,block.GRASS)
-mc.setBlocks(100,0,0,100,1,100,block.GRASS)
+#mc.setBlocks(0,0,100,100,1,100,block.GRASS)
+#mc.setBlocks(100,0,0,100,1,100,block.GRASS)
 
 
-# while True:
+#while True:
 #     playerPos = mc.player.getTilePos()
 #     print(playerPos)
-#     time.sleep(0.1)
+#    hit = mc.events.pollBlockHits()
+#    if hit:
+#        mc.setBlock(*hit[0].pos,block.GRASS)
+#    time.sleep(0.1)
 
 #mc.setBlock(playerPos.x,playerPos.y-1,playerPos.z,block.DIAMOND_ORE)
 #mcDrawing.drawLine(0,0,-10,-10,10,-5,block.STONE.id)
