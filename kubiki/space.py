@@ -16,7 +16,7 @@ from pyglet.window import key, mouse
 from kubiki.server import Server
 from kubiki.blocks import *
 
-TICKS_PER_SEC = 100
+TICKS_PER_SEC = 30
 
 WALKING_SPEED = 10
 FLYING_SPEED = 30

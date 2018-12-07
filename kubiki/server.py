@@ -147,7 +147,7 @@ class Server:
         self.sock.bind((HOST, PORT))
         self.sock.listen(1)
         self.connection = None
-        self.batch = 4
+        self.batch = 300
         self.commands = deque()
 
     def _close(self):
