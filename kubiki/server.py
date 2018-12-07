@@ -80,15 +80,13 @@ class RemoteCommand:
         begin = args[0:3]
         end = args[3:6]
         block = self._find_block(args[6])
-        s = time.time()
-        for x,y,z in product(range(begin[0], end[0] + 1), 
+        for x,y,z in product(range(begin[0], end[0] + 1),
                              range(begin[1], end[1] + 1),
                              range(begin[2], end[2] + 1)):
                     if block == blocks.AIR:
                         self.model.remove_block((x, y, z))
                     else:
                         self.model.add_block((x, y, z), block)
-        print(time.time() - s)
 
     def chat_post(self, payload):
         self.window.chat_msg = payload.decode()

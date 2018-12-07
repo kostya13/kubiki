@@ -15,7 +15,7 @@ s = time.time()
 #     for j in range(1):
 #         for k in range(100):
 #             mc.setBlock(i,j,k,block.GRASS)
-mc.setBlocks(0,0,0,100,0,100,block.GRASS)
+mc.setBlocks(0,0,0,9,0,9,block.GRASS)
 
 #mc.setBlocks(0,0,0,100,1,0,block.GRASS)
 #mc.setBlocks(0,0,0,0,1,100,block.GRASS)
