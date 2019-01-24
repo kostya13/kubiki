@@ -26,6 +26,7 @@ class Block:
         self.num = num
         self.tex_coords = tex_coords
 
+# Первый параметр - это идентификатор блока в Minecraft
 AIR = Block(0, tex_coords((1, 0), (0, 1), (0, 0)))
 GRASS = Block(2, tex_coords((1, 0), (0, 1), (0, 0)))
 SAND = Block(12, tex_coords((1, 1), (1, 1), (1, 1)))

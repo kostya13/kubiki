@@ -58,10 +58,6 @@ def cube_vertices(x, y, z, n):
 TEXTURE_PATH = os.path.join(os.path.dirname(__file__), 'texture.png')
 
 
-
-
-
-
 FACES = [
     ( 0, 1, 0),
     ( 0,-1, 0),

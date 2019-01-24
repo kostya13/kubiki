@@ -4,6 +4,7 @@ from kubiki import blocks
 from collections import deque
 import time
 from itertools import product
+from inspect import getmembers
 
 class RemoteCommand:
     def __init__(self, window, model):
@@ -27,8 +28,7 @@ class RemoteCommand:
                         b"camera.mode.setPos": self.camera_mode_setPos,
                         b"events.block.hits": self.events_block_hits,
                         b"events.clear": self.events_clear}
-        self.blocks = [blocks.GRASS, blocks.BRICK, blocks.SAND, blocks.STONE, blocks.AIR]
-
+        self.blocks = [b for b in blocks.__dict__.values() if isinstance(b, blocks.Block)]
 
     def _find_block(self, num):
         for b in self.blocks:
@@ -59,7 +59,10 @@ class RemoteCommand:
         print("world.setting", 'not implemented')
 
     def world_getBlock(self, payload):
-        pos = [int(i) for i in payload.split(b',')]
+        pos = [int(i) for i in payload.split(b',') if i]
+        if len(args) < 3:
+            print(payload)
+            return        
         try:
             block = self.model.world[tuple(pos)]
         except KeyError:
@@ -68,6 +71,9 @@ class RemoteCommand:
 
     def world_setBlock(self, payload):
         args = [int(i) for i in payload.split(b',') if i]
+        if len(args) < 3:
+            print(payload)
+            return
         block = self._find_block(args[3])
         if block == blocks.AIR:
             self.model.remove_block((args[0], args[1], args[2]))
@@ -75,8 +81,10 @@ class RemoteCommand:
             self.model.add_block((args[0], args[1], args[2]), block)
 
     def world_setBlocks(self, payload):
-        print(payload)
-        args = [int(i) for i in payload.split(b',')]
+        args = [int(i) for i in payload.split(b',') if i]
+        if len(args) < 3:
+            print(payload)
+            return        
         begin = args[0:3]
         end = args[3:6]
         block = self._find_block(args[6])
