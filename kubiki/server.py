@@ -67,7 +67,7 @@ class RemoteCommand:
         return str(block.num)
 
     def world_setBlock(self, payload):
-        args = [int(i) for i in payload.split(b',')]
+        args = [int(i) for i in payload.split(b',') if i]
         block = self._find_block(args[3])
         if block == blocks.AIR:
             self.model.remove_block((args[0], args[1], args[2]))
