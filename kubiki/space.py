@@ -55,7 +55,7 @@ def cube_vertices(x, y, z, n):
 
 
 
-TEXTURE_PATH = os.path.join(os.path.dirname(__file__), 'texture.png')
+TEXTURE_PATH = os.path.join(os.path.dirname(__file__), 'terrain.png')
 
 
 FACES = [
@@ -227,7 +227,7 @@ class Window(pyglet.window.Window):
         self.dy = 0
 
         # A list of blocks the player can place. Hit num keys to cycle.
-        self.inventory = [BRICK, GRASS, SAND]
+        self.inventory = [BRICK_BLOCK, GRASS, SAND]
 
         # The current block the user can place. Hit num keys to cycle.
         self.block = self.inventory[0]

@@ -34,7 +34,7 @@ class RemoteCommand:
         for b in self.blocks:
             if num == b.num:
                 return b
-        return blocks.GRASS
+        return blocks._UNKNOWN
 
     def run(self, data):
         start = data.find(b'(')

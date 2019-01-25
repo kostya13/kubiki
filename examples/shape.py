@@ -20,15 +20,18 @@ shapeBlocks = [ShapeBlock(0,0,0,block.DIAMOND_BLOCK.id),
                 ShapeBlock(1,1,1,block.DIAMOND_BLOCK.id),
                 ShapeBlock(0,1,1,block.DIAMOND_BLOCK.id)]
 
+shapeBlocks = [ ShapeBlock(x,y,z,block.DIAMOND_BLOCK.id)
+                for x in range(40)
+                for y in range(10)
+                for z in range(1)]
 #move the shape about
 myShape = MinecraftShape(mc, Vec3(0,0,0), shapeBlocks)
 print("drawn shape")
-for i in range(10):
-    time.sleep(0.5)
-    myShape.moveBy(1,0,0)
-for i in range(10):
-    time.sleep(0.5)
-    myShape.moveBy(0,1,0)
+for _ in range(3):
+    for i in range(30):
+        myShape.moveBy(1,0,0)
+    for i in range(30):
+        myShape.moveBy(-1,0,0)
 
 ##myShape.moveBy(10,0,1)
 ##time.sleep(0.5)
