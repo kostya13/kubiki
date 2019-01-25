@@ -29,9 +29,27 @@ bl = [
     STONE_SLAB_DOUBLE,
     BRICK_BLOCK,
     TNT,
-    
-    
+    BOOKSHELF,
+    MOSS_STONE,
+    OBSIDIAN,
+    CHEST,
+    DIAMOND_ORE,
+    DIAMOND_BLOCK,
+    CRAFTING_TABLE,
+    FARMLAND,
+    FURNACE_INACTIVE,
+    FURNACE_ACTIVE,
+    REDSTONE_ORE,
+    SNOW,
+    ICE,
+    SNOW_BLOCK,
+    CACTUS,
+    CLAY,
+    GLOWSTONE_BLOCK,
     STONE_BRICK,
+    MELON,
+    GLOWING_OBSIDIAN,
+    NETHER_REACTOR_CORE
     ]
 
 for i, b in enumerate(bl):

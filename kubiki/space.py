@@ -14,7 +14,7 @@ from pyglet.gl import *
 from pyglet.graphics import TextureGroup
 from pyglet.window import key, mouse
 from kubiki.server import Server
-from kubiki.blocks import *
+from kubiki  import blocks
 
 TICKS_PER_SEC = 30
 
@@ -51,8 +51,6 @@ def cube_vertices(x, y, z, n):
         x-n,y-n,z+n, x+n,y-n,z+n, x+n,y+n,z+n, x-n,y+n,z+n,  # front
         x+n,y-n,z-n, x-n,y-n,z-n, x-n,y+n,z-n, x+n,y+n,z-n,  # back
     ]
-
-
 
 
 TEXTURE_PATH = os.path.join(os.path.dirname(__file__), 'terrain.png')
@@ -104,7 +102,7 @@ class Model(object):
         self._shown = {}
 
         #self._initialize()
-        self.add_block((0, 0, 0), STONE)
+        self.add_block((0, 0, 0), blocks.BEDROCK)
 
     def _initialize(self):
         """ Initialize the world by placing all the blocks.
@@ -227,10 +225,12 @@ class Window(pyglet.window.Window):
         self.dy = 0
 
         # A list of blocks the player can place. Hit num keys to cycle.
-        self.inventory = [BRICK_BLOCK, GRASS, SAND]
+        self.inventory = [blocks.BRICK_BLOCK, blocks.DIRT, blocks.SAND, blocks.STONE, blocks.GOLD_BLOCK,
+                          blocks.TNT, blocks.SNOW_BLOCK, blocks.MELON, blocks.LAVA, blocks.OBSIDIAN]
 
         # The current block the user can place. Hit num keys to cycle.
         self.block = self.inventory[0]
+        self.block_focused = ''
 
         # Convenience list of num keys.
         self.num_keys = [
@@ -445,7 +445,7 @@ class Window(pyglet.window.Window):
             elif button == pyglet.window.mouse.LEFT and block:
                 texture = self.model.world[block]
                 self.event = block, self.model.world[block].num
-                if texture != STONE:
+                if texture != blocks.BEDROCK:
                     self.model.remove_block(block)
                     
         else:
@@ -497,11 +497,14 @@ class Window(pyglet.window.Window):
             self.set_exclusive_mouse(False)
         elif symbol == key.TAB:
             self.flying = not self.flying
-        elif symbol == key.ENTER:
+        elif symbol == key.F1:
             self.model.world = {}
             for s in self.model._shown.values():
                 s.delete()
-            self.model._shown = {}                
+            self.model._shown = {}
+        elif symbol == key.F2:
+            self.position = (50, 50, 50)
+            self.rotation = (-45, -45)            
         elif symbol in self.num_keys:
             index = (symbol - self.num_keys[0]) % len(self.inventory)
             self.block = self.inventory[index]
@@ -562,6 +565,7 @@ class Window(pyglet.window.Window):
         """
         width, height = self.get_size()
         glEnable(GL_DEPTH_TEST)
+
         glViewport(0, 0, width, height)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
@@ -600,13 +604,16 @@ class Window(pyglet.window.Window):
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
             pyglet.graphics.draw(24, GL_QUADS, ('v3f/static', vertex_data))
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+            self.block_focused = blocks.num_to_name.get(self.model.world[block].num, "???")
+        else:
+            self.block_focused = ""
 
     def draw_label(self):
         """ Draw the label in the top left of the screen.
 
         """
         x, y, z = map(lambda i: int(i), self.position)
-        self.label.text = f'[x={x}, y={y}, z={z}] кубиков: {len(self.model.world)}'
+        self.label.text = f'[x={x}, y={y}, z={z}] кубиков: {len(self.model.world)} выбран: {blocks.num_to_name.get(self.block.num, "???")} | {self.block_focused}'
         self.chat_label.text = f'{self.chat_msg}'
         self.label.draw()
         self.chat_label.draw()
@@ -629,6 +636,8 @@ def setup():
     # Enable culling (not rendering) of back-facing facets -- facets that aren't
     # visible to you.
     glEnable(GL_CULL_FACE)
+    glEnable(GL_BLEND)                                  # transparency
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)    
     # Set the texture minification/magnification function to GL_NEAREST (nearest
     # in Manhattan distance) to the specified texture coordinates. GL_NEAREST
     # "is generally faster than GL_LINEAR, but it can produce textured images
