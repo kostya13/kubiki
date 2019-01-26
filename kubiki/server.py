@@ -60,7 +60,7 @@ class RemoteCommand:
 
     def world_getBlock(self, payload):
         pos = [int(i) for i in payload.split(b',') if i]
-        if len(args) < 3:
+        if len(pos) < 3:
             print(payload)
             return        
         try:
@@ -157,6 +157,7 @@ class Server:
         self.connection = None
         self.batch = 300
         self.commands = deque()
+        self.incomplete = ''
 
     def _close(self):
         self.connection.close()
@@ -171,7 +172,7 @@ class Server:
             self._handle()
         else:
             if select.select([self.sock], [], [],0)[0]:
-                self.connection, _ = self.sock.accept()
+                self.connection = self.sock.accept()[0]
                 self._handle()
         self._apply()
 
@@ -180,7 +181,11 @@ class Server:
             try:
                 data = self.connection.recv(65536)
                 if data:
-                    self.commands.extend([l for l in data.split(b'\n')])
+                    commands = [l for l in data.split(b'\n')]
+                    if self.incomplete:
+                        commands[0] = self.incomplete + commands[0]
+                    self.incomplete = commands[-1] if commands[-1] else ''
+                    self.commands.extend(commands[:-1])                        
                 else:
                     self._close()
             except ConnectionError:
