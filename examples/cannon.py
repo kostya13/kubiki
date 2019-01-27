@@ -12,23 +12,23 @@ def get_coord(u0, alfa, t):
     return x*100 , y*100
 
 def impact(x):
-    mcDrawing.drawSphere(x, 0, 0, 5, block.AIR)
+    mcDrawing.drawSphere(x, 0, 0, 3, block.AIR)
     
     
 def throw_block():
     for t in range(1000):
-        x, y = get_coord(3, 60 , t/1000)
+        x, y = get_coord(7.0, 5 , t/1000)
         if y < 0 and x > 10:
             impact(x)
             break
-        mc.setBlock(x, y, 0, block.GRASS)
-        time.sleep(0.005)
-        #mc.setBlock(x, y, 0, block.AIR)
+        mc.setBlock(x, y, 0, block.TNT)
+        time.sleep(0.001)
+        mc.setBlock(x, y, 0, block.AIR)
         
         
 def draw_scene():
-    mc.setBlocks(-10, -5, -5, 200, 0, 5,  block.GRASS)
+    mc.setBlocks(-10, 0, -5, 200, 0, 5,  block.GRASS)
 
-draw_scene()
+#draw_scene()
 throw_block()
     

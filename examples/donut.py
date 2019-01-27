@@ -26,5 +26,5 @@ playerPos = mc.player.getPos()
 
 draw_donut(playerPos.x, playerPos.y + 9, playerPos.z, 18, 9, block.GLASS)
 mc.postToChat("Glass donut done")
-draw_donut(playerPos.x, playerPos.y + 9, playerPos.z, 18, 6, block.WATER_STATIONARY)
+draw_donut(playerPos.x, playerPos.y + 9, playerPos.z, 18, 6, block.WATER)
 mc.postToChat("Water donut done")

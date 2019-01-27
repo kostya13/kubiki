@@ -502,9 +502,13 @@ class Window(pyglet.window.Window):
             for s in self.model._shown.values():
                 s.delete()
             self.model._shown = {}
-        elif symbol == key.F2:
+        elif symbol == key.F5:
             self.position = (50, 50, 50)
+            self.rotation = (-45, -45)
+        elif symbol == key.F6:
+            self.position = (200, 200, 200)
             self.rotation = (-45, -45)            
+            
         elif symbol in self.num_keys:
             index = (symbol - self.num_keys[0]) % len(self.inventory)
             self.block = self.inventory[index]
