@@ -6,6 +6,6 @@ setup(
     author='Konstantin Ilyashenko',
     packages=['kubiki'],
     description='Education enviroment in Minecraft style',
-    entry_points={'console_scripts': ['kubiki = kubiki:show']},
+    entry_points={'console_scripts': ['kubiki = kubiki.space:run']},
     install_requires=['pyglet', 'mcpi', 'minecraftstuff']
 )
