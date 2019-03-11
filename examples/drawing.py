@@ -39,9 +39,11 @@ mcDrawing.drawFace(faceVertices, False, block.DIAMOND_BLOCK.id)
 
 #face - 5 sided shape
 faceVertices = []
-faceVertices.append(minecraft.Vec3(0,15,0))
-faceVertices.append(minecraft.Vec3(5,15,5))
-faceVertices.append(minecraft.Vec3(3,15,10))
-faceVertices.append(minecraft.Vec3(-3,15,10))
-faceVertices.append(minecraft.Vec3(-5,15,5))
+faceVertices.append(minecraft.Vec3(0,1,0))
+faceVertices.append(minecraft.Vec3(0,3,0))
+faceVertices.append(minecraft.Vec3(2,3,0))
+faceVertices.append(minecraft.Vec3(2,4,0))
+faceVertices.append(minecraft.Vec3(5,2,0))
+faceVertices.append(minecraft.Vec3(2, 0,0))
+faceVertices.append(minecraft.Vec3(2,1,0))
 mcDrawing.drawFace(faceVertices, True, block.GOLD_BLOCK.id)

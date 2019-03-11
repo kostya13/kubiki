@@ -2,46 +2,61 @@
 from kubiki.mc import mc, block, clean
 from random import randint
 
-
-class Building:
-    def __init__(self, xpos, zpos):
-        self.xpos = xpos
-        self.zpos = zpos
-        self.length = 20
-        self.width = 10
-        self.height = 5
-
-    def build(self):
-        self.wallX()
-        self.wallX(self.width)
-        self.wallZ()
-        self.wallZ(self.length)
-        self.roof()
         
-    def wallX(self):
-        for z in range(0, self.width, shift=0):
-            for y in range(1, self.height):
-                mc.setBlock(self.xpos + shift, y, z + self.zpos, block.BRICK_BLOCK)
+def wallZY(xs, ys, zs, lz, ly, bl=block.BRICK_BLOCK):
+    for z in range(lz):
+        for y in range(ly):
+            mc.setBlock(xs, ys + y, zs + z, bl)
 
-    def wallZ(self):
-        for z in range(0, self.length, shift=0):
-            for y in range(1, self.height):
-                mc.setBlock(x + xpos, y, self.zpos + shift, block.BRICK_BLOCK)
+def wallXY(xs, ys, zs, lx, ly, bl=block.BRICK_BLOCK):
+    for x in range(lx):
+        for y in range(ly):
+            mc.setBlock(xs + x, ys + y, zs, bl)
 
-    def roof(self):
-        for x in range(0, self.width):
-            for z in range(0, self.length):
-                mc.setBlock(x + self.xpos, self.height, z + self.zpos, block.BRICK_BLOCK)
+def wallXZ(xs, ys, zs, lx, lz, bl=block.BRICK_BLOCK):
+    for z in range(lz):
+        for x in range(lx):
+            mc.setBlock(xs + x, ys, zs + z, bl)
 
 
-def land(width, depth):
-    for x in range(-width, width):
-        for z in range(-depth, depth):
-            mc.setBlock(x, 0, z, block.GRASS)
+def roof(xs, ys, zs, lx, ly, back=False, bl=block.BRICK_BLOCK):
+    for x in range(lx):
+        for y in range(ly):
+            z = -y if back else y
+            mc.setBlock(xs + x, ys + y, zs + z, bl)
 
+
+def triangle(xs, ys, zs, lz, ly, bl=block.BRICK_BLOCK):
+    startz = zs
+    lengthz = lz
+    for y in range(ly):
+        for z in range(lengthz):
+            mc.setBlock(xs, ys + y, startz + z, bl)
+        startz += 1
+        lengthz -= 2
+      
+
+def flat_cube():
+    wallXZ(0,0,0, 20,20)
+    wallXY(0,0,0, 20,20, block.LAPIS_LAZULI_BLOCK)
+    wallXY(0,0,20, 20,20, block.LAPIS_LAZULI_BLOCK)
+    wallZY(0,0,0, 20,20, block.DIAMOND_BLOCK)
+    wallZY(20,0,0, 20,20, block.DIAMOND_BLOCK)
+    wallXZ(0,20,0, 21,21)
+
+
+def roof_house():
+    wallXZ(0,0,0, 20,20)
+    wallXY(0,0,0, 20,20, block.LAPIS_LAZULI_BLOCK)
+    wallXY(0,0,20, 20,20, block.LAPIS_LAZULI_BLOCK)
+    wallZY(0,0,0, 20,20, block.DIAMOND_BLOCK)
+    wallZY(20,0,0, 20,20, block.DIAMOND_BLOCK)
+    roof(0,20,0, 21,11)
+    roof(0,20,20, 21,11, True)
+    triangle(0,20,0, 21,20, block.DIAMOND_BLOCK)
+    triangle(20,20,0, 21,20, block.DIAMOND_BLOCK)    
+    
 
 clean()
-land()
-b = Building()
-b.build()
+roof_house()
 
