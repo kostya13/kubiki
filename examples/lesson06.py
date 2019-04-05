@@ -3,7 +3,6 @@ import mcpi.minecraft as minecraft
 import mcpi.block as block
 from mcpi.vec3 import  Vec3
 import time
-import threading
 from time import sleep
 
 
